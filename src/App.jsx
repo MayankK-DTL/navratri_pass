@@ -1,90 +1,111 @@
 import React, { useRef, useEffect, useState } from "react";
-import templateImage from "./assets/template_pass1.png";
-import qrCodeImage from "./assets/qr_code.png";
 
 function App() {
   const canvasTemplate = useRef(null);
-  
   const [isLoading, setIsLoading] = useState(true);
-
 
   useEffect(() => {
     const canvasImg = canvasTemplate.current;
-    if (!canvasImg) return; 
+    if (!canvasImg) return;
+    
     const context = canvasImg.getContext("2d");
     const template = new Image();
     const qrCode = new Image();
-
 
     let loadedImageCount = 0;
 
     const onImageLoad = () => {
       loadedImageCount++;
-      if (loadedImageCount) {
+      if (loadedImageCount === 2) {
+          canvasImg.width = template.width;
+          canvasImg.height = template.height;
 
-        canvasImg.width = template.width;
-        canvasImg.height = template.height;
+          context.drawImage(template, 0, 0, canvasImg.width, canvasImg.height);
 
-        context.drawImage(template, 0, 0, canvasImg.width, canvasImg.height);
+          const qrSize = 423;
+          const qrX = 1272;
+          const qrY = 74;
+          
+          context.drawImage(qrCode, qrX, qrY, qrSize, qrSize);
 
-        const qrSize = 423; 
-        const qrX = 1272;   
-        const qrY = 74;    
-        context.drawImage(qrCode, qrX, qrY, qrSize, qrSize);
-
-
-        setIsLoading(false);
+          setIsLoading(false);
       }
     };
-    
+
     template.onload = onImageLoad;
+    qrCode.onload = onImageLoad;
 
-    template.src = templateImage;
-    qrCode.src = qrCodeImage;
+    // Set CORS to anonymous for external images
+    template.crossOrigin = "anonymous";
+    qrCode.crossOrigin = "anonymous";
 
-  }, []); 
+    template.src = "https://d270hb9rabtrcg.cloudfront.net/Qr_Template/1757916654744_6_10_54_48599.png";
+    qrCode.src = "https://d270hb9rabtrcg.cloudfront.net/Qr_Code/c4628ad0a3b29009e14e328e428417df.png";
+  }, []);
 
- 
   const handleDownload = () => {
     if (!canvasTemplate.current) return;
-    const link = document.createElement("a");
-    link.download = "qr_template_final.png";
-    link.href = canvasTemplate.current.toDataURL("image/png");
-    link.click();
+      const link = document.createElement("a");
+      link.download = "qr_template_final.png";
+      link.href = canvasTemplate.current.toDataURL("image/png");
+      link.click();
   };
 
-
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!canvasTemplate.current) return;
-    canvasTemplate.current.toBlob( (blob) => {
-      try {
-         navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        alert("Image copied to clipboard!");
-      } catch (error) {
-       alert("Copy failed:", error);
-      }
-    }, "image/png");
+    
+      canvasTemplate.current.toBlob(async (blob) => {
+        if (!blob) return;
+        
+        if (navigator.clipboard && navigator.clipboard.write) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob })
+          ]);
+          alert("Image copied to clipboard!");
+        } else {
+          alert("Clipboard not supported. Please use download instead.");
+        }
+      }, "image/png");
   };
 
+  const handleShare = async () => {
+    if (!canvasTemplate.current) return;
 
-  const handleShare = () => {
-    // if (!canvasTemplate.current) return;
-    canvasTemplate.current.toBlob( (blob) => {
+    canvasTemplate.current.toBlob(async (blob) => {
       console.log('blob', blob)
-      const file = new File([blob], "qr_template_final.png", { type: "image/png" } , {image:canvasTemplate} );
-      const shareData = {
-        files: [file],
-      };
-      // Check if the browser is a supports sharing files.
-      if (navigator.canShare && navigator.canShare(shareData)) {
-        try {
-           navigator.share(shareData);
-           console.log('shareData', shareData)
-        } catch (error) {
-          console.log("Sharing was cancelled or failed.", error);
+      if (!blob) return;
+
+      const file = new File([blob], "qr_template_final.png", {
+        type: "image/png",
+      });
+
+      // Check if Web Share API is supported
+      if (navigator.share && navigator.canShare) {
+        const shareData = { files: [file] };
+        
+        if (navigator.canShare(shareData)) {
+          try {
+            await navigator.share(shareData);
+            console.log("Image shared successfully");
+            return;
+          } catch (error) {
+            if (error.name !== 'AbortError') {
+              console.error("Sharing failed:", error);
+            }
+          }
         }
+      }
+
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Mobile WhatsApp sharing
+        const whatsappURL = `whatsapp://send?text=${encodeURIComponent("Check out my QR code!")}`;
+        window.open(whatsappURL, '_blank');
       } else {
-        alert("Sharing is not available. Please download or copy the image.");
+        // Desktop: Open WhatsApp Web
+        const whatsappWebURL = `https://web.whatsapp.com/send?text=${encodeURIComponent("Check out my QR code! Download the image to share it.")}`;
+        window.open(whatsappWebURL, '_blank');
       }
     }, "image/png");
   };
@@ -118,6 +139,7 @@ function App() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"><path d="M6.286 19C3.919 19 2 17.104 2 14.765s1.919-4.236 4.286-4.236q.427.001.83.08m7.265-2.582a5.8 5.8 0 0 1 1.905-.321c.654 0 1.283.109 1.87.309m-11.04 2.594a5.6 5.6 0 0 1-.354-1.962C6.762 5.528 9.32 3 12.476 3c2.94 0 5.361 2.194 5.68 5.015m-11.04 2.594a4.3 4.3 0 0 1 1.55.634m9.49-3.228C20.392 8.78 22 10.881 22 13.353c0 2.707-1.927 4.97-4.5 5.52" opacity="0.5" /><path stroke-linejoin="round" d="M12 22v-6m0 6l2-2m-2 2l-2-2" /></g></svg>
                 Download
               </button>
+              
               <button
                 onClick={handleShare}
                 className="bg-[#dc4c5b] hover:bg-[#ae1d1d] text-white font-bold py-3 px-6 rounded-lg hover:scale-101 flex items-center gap-2"
