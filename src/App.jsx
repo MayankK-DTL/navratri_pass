@@ -89,36 +89,6 @@ function App() {
 };
 
 
-// const handleShare = async () => {
-//   if (!canvasTemplate.current) return;
-
-//   try {
-//     setIsSharing(true);
-
-//     const canvas = canvasTemplate.current;
-
-//     // Get blob directly from the canvas
-//     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-
-//     if (!blob) throw new Error("Failed to create image blob");
-
-//     const file = new File([blob], "event-ticket.png", { type: "image/png" });
-
-//     const shareData = {
-//       files: [file],
-//     };
-
-//     if (navigator.canShare && navigator.canShare(shareData)) {
-//       await navigator.canShare(shareData);
-//     } else {
-//       alert("Sharing is not supported on this device or browser.");
-//     }
-//   } catch (err) {
-//     console.error("Error sharing:", err);
-//   } finally {
-//     setIsSharing(false);
-//   }
-// };
 
 
 
